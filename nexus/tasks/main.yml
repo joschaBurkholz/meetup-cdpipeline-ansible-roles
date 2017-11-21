@@ -1,0 +1,32 @@
+- name: Combine the default role variables with the given external parameters
+  set_fact:
+    _NEXUS: "{{ nexus_default | combine(_nexus, recursive=True) }}"
+
+- name: Create Nexus Home directory in "{{ _NEXUS.data_directory }}/sonatype-work/conf"
+  file: path="{{ _NEXUS.data_directory }}/sonatype-work/conf" state=directory mode=0777
+
+- name: Create Nexus configuration file
+  template: src=sonatype-work/conf/{{item}}.j2 dest="{{ _NEXUS.data_directory }}/sonatype-work/conf/{{item}}" owner={{ _NEXUS.user }} group={{ _NEXUS.group }} mode=0664
+  with_items:
+    - nexus.xml
+    - ldap.xml
+    - security-configuration.xml
+    - security.xml
+
+- name: Start Nexus container
+  docker_container:
+    name: nexus
+    image: "{{ _NEXUS.image }}:{{ _NEXUS.version | default('latest') }}"
+    pull: true
+    state: started
+    restart: yes
+    restart_policy: always
+    restart_retries: 5
+    published_ports:
+      - "8081:8081"
+    volumes:
+      - "{{ _NEXUS.data_directory }}/sonatype-work:/sonatype-work"
+    user: "{{ _NEXUS.user }}"
+    etc_hosts: "{{ _NEXUS.extra_hosts | default({}) }}"
+    networks:
+      - name: "application"

@@ -1,0 +1,5 @@
+postgres_default:
+  version: 9.5
+  user: postgres
+  uid: 3007
+  group: postgres

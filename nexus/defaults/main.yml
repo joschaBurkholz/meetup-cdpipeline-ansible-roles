@@ -1,0 +1,6 @@
+nexus_default:
+  version: latest
+  user: nexus
+  uid: 3001
+  group: nexus
+  ldap_admin_group: "NEXUS_ADMIN"

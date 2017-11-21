@@ -1,0 +1,26 @@
+- name: Combine the default role variables with the given external parameters
+  set_fact:
+    _REGISTRY: "{{ registry_default | combine(_registry, recursive=True) }}"
+
+#- name: Disable SELinux
+#  selinux: state=disabled
+
+- name: Create data directory
+  file: path="{{ _REGISTRY.data_directory }}/var/lib/registry/docker" state=directory mode=0777
+
+- name: Start Docker Registry container
+  docker_container:
+    name: registry
+    image: "{{ _REGISTRY.image }}:{{ _REGISTRY.version }}"
+    pull: true
+    state: started
+    restart: yes
+    restart_policy: always
+    restart_retries: 5
+    published_ports:
+      - "5000:5000"
+    env:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+    volumes:
+      - "{{ _REGISTRY.data_directory }}/var/lib/registry:/var/lib/registry"
+    user: "{{ _REGISTRY.uid }}"

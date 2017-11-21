@@ -1,0 +1,5 @@
+sonarqube_default:
+  version: latest
+  user: sonarqube
+  uid: 3002
+  group: sonarqube

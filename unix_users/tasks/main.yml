@@ -1,0 +1,5 @@
+- name: Create UNIX Group "{{ _unix.group }}"
+  group: name="{{ _unix.group }}" state=present
+
+- name: Create UNIX User "{{ _unix.user }}" with UID "{{ _unix.uid }}"
+  user: name="{{ _unix.user }}" group="{{ _unix.group }}" uid="{{ _unix.uid }}" createhome=no

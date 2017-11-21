@@ -1,0 +1,37 @@
+- name: Combine the default role variables with the given external parameters
+  set_fact:
+    _SONARQUBE: "{{ sonarqube_default | combine(_sonarqube, recursive=True) }}"
+
+- name: Create Sonarqube host volumes
+  file: path={{ item }} state=directory mode=0777
+  with_items:
+    - "{{ _SONARQUBE.data_directory }}/opt/sonarqube/conf"
+    - "{{ _SONARQUBE.data_directory }}/opt/sonarqube/data"
+    - "{{ _SONARQUBE.data_directory }}/opt/sonarqube/logs"
+
+- name: Create Sonarqube configuration file
+  template: src=opt/sonarqube/conf/sonar.properties.j2 dest="{{ _SONARQUBE.data_directory }}/opt/sonarqube/conf/sonar.properties" owner={{ _SONARQUBE.user }} group={{ _SONARQUBE.group }} mode=0664
+
+- name: Start Sonarqube container
+  docker_container:
+    name: sonarqube
+    image: "{{ _SONARQUBE.image }}:{{ _SONARQUBE.version }}"
+    pull: true
+    state: started
+    restart: yes
+    restart_policy: always
+    restart_retries: 5
+    published_ports:
+      - "9000:9000"
+      - "9092:9092"
+    volumes:
+      - "{{ _SONARQUBE.data_directory }}/opt/sonarqube/conf:/opt/sonarqube/conf"
+      - "{{ _SONARQUBE.data_directory }}/opt/sonarqube/data:/opt/sonarqube/data"
+      - "{{ _SONARQUBE.data_directory }}/opt/sonarqube/logs:/opt/sonarqube/logs"
+    user: "{{ _SONARQUBE.user }}"
+    etc_hosts:
+      "{{ _SONARQUBE.extra_hosts | default({}) }}"
+    env:
+      "{{ _SONARQUBE.environment }}"
+    networks:
+      - name: "application"

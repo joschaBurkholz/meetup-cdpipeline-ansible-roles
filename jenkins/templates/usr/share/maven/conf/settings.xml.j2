@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd">
+
+  <localRepository>/var/lib/jenkins/.m2/repository</localRepository>
+
+  <servers>
+      <server>
+        <id>nexus-snapshots-repository</id>
+        <username>{{ _JENKINS.nexus.username }}</username>
+        <password>{{ _JENKINS.nexus.password }}</password>
+      </server>
+      <server>
+        <id>nexus-releases-repository</id>
+        <username>{{ _JENKINS.nexus.username }}</username>
+        <password>{{ _JENKINS.nexus.password }}</password>
+      </server>
+      <server>
+        <id>nexus-thirdparty-repository</id>
+        <username>{{ _JENKINS.nexus.username }}</username>
+        <password>{{ _JENKINS.nexus.password }}</password>
+      </server>
+  </servers>
+
+  <!-- Mirror all requests thru Nexus -->
+  <mirrors>
+     <mirror>
+       <id>nexus</id>
+       <mirrorOf>*</mirrorOf>
+       <url>{{ _JENKINS.nexus.url }}</url>
+     </mirror>
+  </mirrors>
+  <profiles>
+       <profile>
+         <id>sonar</id>
+         <properties>
+           <sonar.host.url>{{ _JENKINS.sonarqube.url }}</sonar.host.url>
+         </properties>
+       </profile>
+       <profile>
+        <id>nexus</id>
+        <!--Enable snapshots for the built in central repo to direct -->
+        <!--all requests to nexus via the mirror -->
+        <!-- See also https://books.sonatype.com/nexus-book/2.8/reference/maven-sect-single-group.html -->
+        <repositories>
+          <repository>
+            <id>central</id>
+            <url>http://central</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>true</enabled></snapshots>
+          </repository>
+        </repositories>
+       <pluginRepositories>
+          <pluginRepository>
+            <id>central</id>
+            <url>http://central</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>true</enabled></snapshots>
+          </pluginRepository>
+        </pluginRepositories>
+      </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>sonar</activeProfile>
+    <activeProfile>nexus</activeProfile>
+  </activeProfiles>
+</settings>

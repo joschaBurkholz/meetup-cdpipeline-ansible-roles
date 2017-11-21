@@ -1,0 +1,99 @@
+- name: Combine the default role variables with the given external parameters
+  set_fact:
+    _JENKINS: "{{ jenkins_default | combine(_jenkins, recursive=True) }}"
+
+- name: Create Docker group
+  group: name=docker state=present gid={{ _JENKINS.docker_gid }}
+
+- name: Add user jenkins to docker group
+  user: name={{ _JENKINS.user }} comment="Jenkins Container User" uid={{ _JENKINS.uid }} group=docker
+
+- name: Make docker.sock accessible for users in group docker
+  file: path=/var/run/docker.sock owner=root group=docker
+
+- name: Create Jenkins Home directory
+  file: path="{{ _JENKINS.data_directory }}/var/lib/jenkins" state=directory mode=0777 owner={{ _JENKINS.uid }} group={{ _JENKINS.group }}
+
+- name: Create Jenkins Home and SSH Directory directory
+  file: path="{{ _JENKINS.data_directory}}/var/lib/jenkins/.ssh" state=directory mode=0777 owner={{ _JENKINS.uid }} group={{ _JENKINS.group }}
+
+- name: Create Maven config directory
+  file: path=/opt/docker/maven/usr/share/maven/conf state=directory mode=0777
+
+- name: Install Public Git SSH keys
+  copy: content="{{ _JENKINS.git.public_key.value }}" dest="{{ _JENKINS.data_directory}}/var/lib/jenkins/.ssh/{{ _JENKINS.git.public_key.filename }}" mode=0400 owner={{ _JENKINS.user }} group={{ _JENKINS.group }}
+  when: _JENKINS.git.public_key.value is defined
+
+- name: Install Private Git SSH keys
+  copy: content="{{ _JENKINS.git.private_key.value }}" dest="{{ _JENKINS.data_directory}}/var/lib/jenkins/.ssh/{{ _JENKINS.git.private_key.filename }}" mode=0400 owner={{ _JENKINS.user }} group={{ _JENKINS.group }}
+  when: _JENKINS.git.private_key.value is defined
+
+- name: Install Public Ansible SSH keys
+  copy: content="{{ _JENKINS.ansible.public_key.value }}" dest="{{ _JENKINS.data_directory}}/var/lib/jenkins/.ssh/{{ _JENKINS.ansible.public_key.filename }}" mode=400 owner={{ _JENKINS.user }} group={{ _JENKINS.group }}
+  when: _JENKINS.ansible.private_key.value is defined
+
+- name: Install Private Ansible SSH keys
+  copy: content="{{ _JENKINS.ansible.private_key.value }}" dest="{{ _JENKINS.data_directory}}/var/lib/jenkins/.ssh/{{ _JENKINS.ansible.private_key.filename }}" mode=400 owner={{ _JENKINS.user }} group={{ _JENKINS.group }}
+  when: _JENKINS.ansible.private_key.value is defined
+
+- name: Disable StrictHostKeyChecking
+  copy: content="Host *\n\tStrictHostKeyChecking no\n" dest="{{ _JENKINS.data_directory}}/var/lib/jenkins/.ssh/config" mode=400 owner={{ _JENKINS.user }} group={{ _JENKINS.group }}
+
+- name: Create Jenkins credentials configuration file
+  template: src=var/lib/jenkins/credentials.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/credentials.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+
+- name: Create Jenkins Mask Passwords Configuration file
+  template: src=var/lib/jenkins/com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsConfig.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/com.michelin.cio.hudson.plugins.maskpasswords.MaskPasswordsConfig.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+  when: vault_http_proxy.password is defined
+
+- name: Create Jenkins config.xml file
+  template: src=var/lib/jenkins/config.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/config.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+
+- name: Create Jenkins Location Configuration file
+  template: src=var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+
+- name: Create Jenkins Git Configuration file
+  template: src=var/lib/jenkins/hudson.plugins.git.GitSCM.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/hudson.plugins.git.GitSCM.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+
+- name: Create Maven settings.xml configuration file
+  template: src=usr/share/maven/conf/settings.xml.j2 dest=/opt/docker/maven/usr/share/maven/conf/settings.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+
+- name: Create Maven configuration file for Jenkins (path)
+  template: src=var/lib/jenkins/hudson.tasks.Maven.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/hudson.tasks.Maven.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+
+- name: Create Maven configuration file for Jenkins (settings)
+  template: src=var/lib/jenkins/jenkins.mvn.GlobalMavenConfig.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/jenkins.mvn.GlobalMavenConfig.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+
+- name: Create Mailserver Mailer.xml configuration file
+  template: src=var/lib/jenkins/hudson.tasks.Mailer.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/hudson.tasks.Mailer.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+  when: _JENKINS.mailserver.smtpAuthUsername is defined
+
+- name: Create directory for the job-dsl-seed-job
+  file: path="{{ _JENKINS.data_directory }}/var/lib/jenkins/jobs/job-dsl-seed-job" state=directory mode=0777
+
+- name: Create Jenkins DSL Seed Job
+  template: src=var/lib/jenkins/jobs/job-dsl-seed-job.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/jobs/job-dsl-seed-job/config.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
+
+- name: Start Jenkins container
+  docker_container:
+    name: jenkins-master
+    image: "{{ _JENKINS.image }}:{{ _JENKINS.version | default('latest') }}"
+    pull: true
+    state: started
+    restart: yes
+    restart_policy: always
+    restart_retries: 5
+    published_ports:
+      - "8080:8080"
+    volumes:
+      - "{{ _JENKINS.data_directory }}/var/lib/jenkins:/var/lib/jenkins"
+      - "{{ _JENKINS.data_directory }}/var/lib/jenkins/.ssh:/var/lib/jenkins/.ssh"
+      - "/opt/docker/maven/usr/share/maven/conf:/usr/share/maven/conf"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/opt/docker/jenkins/var/log/jenkins:/var/log/jenkins"
+    user: "{{ _JENKINS.user }}"
+    etc_hosts: "{{ _JENKINS.extra_hosts | default({}) }}"
+    env:
+      "{{ _JENKINS.environment }}"
+    networks:
+      - name: "application"

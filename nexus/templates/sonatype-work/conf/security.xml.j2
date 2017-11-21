@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- {{ ansible_managed }} -->
+<security>
+  <version>2.0.5</version>
+  <users>
+    <user>
+      <id>deployment</id>
+      <firstName>Deployment</firstName>
+      <lastName>User</lastName>
+      <password>b2a0e378437817cebdf753d7dff3dd75483af9e0</password>
+      <status>active</status>
+      <email>changeme1@yourcompany.com</email>
+    </user>
+    <user>
+      <id>admin</id>
+      <firstName>Administrator</firstName>
+      <lastName>User</lastName>
+      <password>$shiro1$SHA-512$1024$0WdyHh7D2m2QXITOCl7YRA==$UjpsTyCH+RWRSSt1zHt5DmiAk4KPApvHaysKgVZEpyP24vnJ5jsDaMn7bCywSbpv94Dr0z+aWeP/q8DBZ1kB3Q==</password>
+      <status>active</status>
+      <email>changeme@yourcompany.com</email>
+    </user>
+    <user>
+      <id>anonymous</id>
+      <firstName>Nexus</firstName>
+      <lastName>Anonymous User</lastName>
+      <password>$shiro1$SHA-512$1024$l9gLyMhMgvsWzUNiZQpRFQ==$G+Jbg0Y1gyd/dvdM7ust4ZSJvSbINKN6uvxRYPSC9VeXiqRYV6kV7E7/XRb3p4U2tbdWwMt4gnxiz+bQco5IKA==</password>
+      <status>active</status>
+      <email>changeme2@yourcompany.com</email>
+    </user>
+  </users>
+  <roles>
+    <role>
+      <id>{{ _NEXUS.ldap_admin_group }}</id>
+      <name>{{ _NEXUS.ldap_admin_group }}</name>
+      <description>External mapping for {{ _NEXUS.ldap_admin_group }} (LDAP)</description>
+      <privileges>
+        <privilege>2</privilege>
+      </privileges>
+      <roles>
+        <role>ui-basic</role>
+        <role>nx-admin</role>
+      </roles>
+    </role>
+  </roles>
+  <userRoleMappings>
+    <userRoleMapping>
+      <userId>deployment</userId>
+      <source>default</source>
+      <roles>
+        <role>nx-deployment</role>
+        <role>repository-any-full</role>
+      </roles>
+    </userRoleMapping>
+    <userRoleMapping>
+      <userId>admin</userId>
+      <source>default</source>
+      <roles>
+        <role>nx-admin</role>
+      </roles>
+    </userRoleMapping>
+    <userRoleMapping>
+      <userId>anonymous</userId>
+      <source>default</source>
+      <roles>
+        <role>anonymous</role>
+        <role>repository-any-read</role>
+      </roles>
+    </userRoleMapping>
+  </userRoleMappings>
+</security>

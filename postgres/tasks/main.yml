@@ -1,0 +1,25 @@
+- name: Combine the default role variables with the given external parameters
+  set_fact:
+    _POSTGRES: "{{ postgres_default | combine(_postgres, recursive=True) }}"
+
+- name: Create Postgres Data directory
+  file: path="{{ _POSTGRES.data_directory }}" state=directory mode=0777
+
+- name: Start Postgres container
+  docker_container:
+    name: "{{ _POSTGRES.name }}"
+    image: "{{ _POSTGRES.image }}:{{ _POSTGRES.version }}"
+    pull: true
+    state: started
+    restart: yes
+    restart_policy: always
+    restart_retries: 5
+    published_ports:
+      - "{{ _POSTGRES.ports }}"
+    volumes:
+      - "{{ _POSTGRES.data_directory }}:/var/lib/postgresql/data"
+    user: root
+    env:
+      "{{ _POSTGRES.environment }}"
+    networks:
+      - name: "application"

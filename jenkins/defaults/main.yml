@@ -1,0 +1,6 @@
+jenkins_default:
+  version: latest
+  user: jenkins
+  uid: 3000
+  group: jenkins
+  ldap_admin_group: "JENKINS_ADMIN"

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- {{ ansible_managed }} -->
+<ldapConfiguration>
+  <version>2.8.0</version>
+  <connectionInfo>
+    <searchBase>{{ ldap.root_dn }}</searchBase>
+    <systemUsername>{{ ldap.bind_user }}</systemUsername>
+    <systemPassword>{{ ldap.bind_password }}</systemPassword>
+    <authScheme>simple</authScheme>
+    <protocol>ldap</protocol>
+    <host>{{ ldap.server }}</host>
+    <port>389</port>
+  </connectionInfo>
+  <userAndGroupConfig>
+    <emailAddressAttribute>mail</emailAddressAttribute>
+    <ldapGroupsAsRoles>true</ldapGroupsAsRoles>
+    <groupBaseDn>{{ ldap.group_search_base }}</groupBaseDn>
+    <groupIdAttribute>cn</groupIdAttribute>
+    <groupMemberAttribute>uniqueMember</groupMemberAttribute>
+    <groupMemberFormat>${dn}</groupMemberFormat>
+    <groupObjectClass>groupOfUniqueNames</groupObjectClass>
+    <userIdAttribute>{{ ldap.user_search }}</userIdAttribute>
+    <userObjectClass>inetOrgPerson</userObjectClass>
+    <userRealNameAttribute>cn</userRealNameAttribute>
+    <userSubtree>true</userSubtree>
+    <groupSubtree>true</groupSubtree>
+  </userAndGroupConfig>
+</ldapConfiguration>

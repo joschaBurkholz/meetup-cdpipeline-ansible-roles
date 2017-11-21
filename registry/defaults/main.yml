@@ -1,0 +1,6 @@
+registry_default:
+  image: registry
+  version: 2
+  user: registry
+  uid: 3004
+  group: registry

@@ -1,0 +1,29 @@
+- name: Combine the default vars with the given parameters
+  set_fact:
+    _APPLICATION: "{{ application_default | combine(_application, recursive=True) }}"
+
+- name: Create directories for application container
+  file: path="{{ item }}" state=directory mode=0777
+  with_items: "{{ _APPLICATION.volumes_host | default([])}}"
+
+- name: Start "{{ _APPLICATION.name }}" with Version "{{ version | default(_APPLICATION.version) }}"
+  docker_container:
+    name: "{{ _APPLICATION.name }}"
+    hostname: "{{ _APPLICATION.name }}"
+    image: "{{ _APPLICATION.image }}:{{ version | default(_APPLICATION.version) }}"
+    pull: true
+    state: started
+    restart: yes
+    restart_policy: always
+    restart_retries: 5
+    published_ports:
+      "{{ _APPLICATION.ports }}"
+    env:
+      "{{ _APPLICATION.environment | default({}) }}"
+    etc_hosts:
+      "{{ _APPLICATION.extra_hosts | default({}) }}"
+    networks:
+      - name: "application"
+    volumes:
+      "{{ _APPLICATION.volume_mappings | default([]) }}"
+    keep_volumes: false

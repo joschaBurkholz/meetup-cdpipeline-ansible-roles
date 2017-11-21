@@ -1,0 +1,13 @@
+- name: Combine the default vars with the given parameters
+  set_fact:
+    _DOCKER_NETWORK: "{{ docker_network_default | combine(_docker_network, recursive=True) }}"
+  when: _docker_network is defined
+
+- name: Check if docker network for "{{ _DOCKER_NETWORK.name }}" already exists
+  command: docker network inspect {{ _DOCKER_NETWORK.name }}
+  register: result
+  failed_when: false
+
+- name: Create Docker Network for Application
+  command: docker network create {{ _DOCKER_NETWORK.name }}
+  when: result is defined and result.rc == 1
