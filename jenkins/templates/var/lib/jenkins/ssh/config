@@ -1,0 +1,7 @@
+Host *
+    StrictHostKeyChecking no
+
+host github.com
+    HostName github.com
+    IdentityFile ~/.ssh/git
+    User git

@@ -64,6 +64,9 @@
 - name: Create Maven configuration file for Jenkins (settings)
   template: src=var/lib/jenkins/jenkins.mvn.GlobalMavenConfig.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/jenkins.mvn.GlobalMavenConfig.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
 
+- name: Create SSH config
+  template: src=var/lib/jenkins/ssh/config dest={{ _JENKINS.data_directory}}/var/lib/jenkins/.ssh/config owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=400
+
 - name: Create Mailserver Mailer.xml configuration file
   template: src=var/lib/jenkins/hudson.tasks.Mailer.xml.j2 dest={{ _JENKINS.data_directory}}/var/lib/jenkins/hudson.tasks.Mailer.xml owner={{ _JENKINS.user }} group={{ _JENKINS.group }} mode=0640
   when: _JENKINS.mailserver.smtpAuthUsername is defined
